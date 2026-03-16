@@ -1,48 +1,100 @@
 /************************************************************************************
-* 			eltiempo.selfip.com - Sager Weathercaster Algorhithm 					*
-*   																				*
-*				Copyright © 2008 Naish666 (eltiempo.selfip.com)						*
-* 							October 2008 - v1.0										*
-*************************************************************************************  										
-*  		This program is free software: you can redistribute it and/or modify		*
-*    it under the terms of the GNU General Public License as published by			*
-*    the Free Software Foundation, either version 3 of the License, or				*
-*    (at your option) any later version.											*
-*																					*
-*    This program is distributed in the hope that it will be useful,				*				
-*    but WITHOUT ANY WARRANTY; without even the implied warranty of					*
-*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the					*
-*    GNU General Public License for more details.									*
-*																					*
-*    You should have received a copy of the GNU General Public License              *
-*    along with this program.  If not, see <http://www.gnu.org/licenses/>.          *
-*																					*
+*                    Sager Weathercaster Algorithm                                 *
+*                                                                                  *
+*  The Sager Weathercaster is a barometric weather prediction system originally    *
+*  developed for the United States Air Force, in continuous use since 1942.        *
+*  It generates 12-24 hour weather forecasts for any location north of 25°         *
+*  latitude, covering a radius of approximately 30 miles (50 km).                  *
+*                                                                                  *
+*  This implementation encodes all 5,000 forecast combinations as a data-driven    *
+*  lookup table, mapping wind, pressure, and cloud conditions to forecast text.    *
+*                                                                                  *
+*                Copyright © 2008 Naish666 (eltiempo.selfip.com)                   *
+*                            October 2008 - v1.0                                   *
+*************************************************************************************
+*  This program is free software: you can redistribute it and/or modify            *
+*  it under the terms of the GNU General Public License as published by            *
+*  the Free Software Foundation, either version 3 of the License, or              *
+*  (at your option) any later version.                                             *
+*                                                                                  *
+*  This program is distributed in the hope that it will be useful,                 *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of                  *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                   *
+*  GNU General Public License for more details.                                    *
+*                                                                                  *
+*  You should have received a copy of the GNU General Public License               *
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.           *
+*                                                                                  *
 *************************************************************************************/
 
 
-// ----  variables ------------
+// ============================================================================
+// USAGE
+// ============================================================================
+//
+//   forecast = sager_cast(z_wind, z_rumbo, z_hpa, z_trend, z_nubes);
+//
+// PARAMETERS:
+//
+//   z_wind (string) - Current surface wind direction:
+//     "calm", "N", "NE", "E", "SE", "S", "SW", "W", "NW"
+//
+//   z_rumbo (string) - Wind direction change over the last 6 hours (~45°+):
+//     "BACKING"  = shifted counter-clockwise
+//     "STEADY"   = no significant change
+//     "VEERING"  = shifted clockwise
+//
+//   z_hpa (number) - Sea-level adjusted barometric pressure band (1-8):
+//     1 = >1029.5 mb  (30.4-31.0 inHg)   High pressure
+//     2 = 1019-1029 mb (30.1-30.4 inHg)
+//     3 = 1012-1019 mb (29.9-30.1 inHg)
+//     4 = 1005-1012 mb (29.7-29.9 inHg)
+//     5 = 999-1005 mb  (29.5-29.7 inHg)
+//     6 = 988-999 mb   (29.2-29.5 inHg)
+//     7 = 975-988 mb   (28.8-29.2 inHg)
+//     8 = <975 mb      (28.0-28.8 inHg)   Low pressure
+//
+//   z_trend (number) - Barometric pressure tendency over last 6 hours (1-5):
+//     1 = Rising rapidly
+//     2 = Rising slowly
+//     3 = Steady
+//     4 = Falling slowly
+//     5 = Falling rapidly
+//
+//   z_nubes (number) - Current cloud/sky condition (1-5):
+//     1 = Clear
+//     2 = Partly cloudy
+//     3 = Mostly overcast
+//     4 = Overcast
+//     5 = Rain
+//
+// RETURNS:
+//   A string describing the 12-24 hour weather forecast, expected wind
+//   direction, and expected wind velocity.
+//
+// ============================================================================
 
-// Usage:   forecast = sager_cast( z_wind, z_rumbo, z_hpa, z_trend, z_nubes);
 
-// z_wind is English windrose cardinal eg. N, NNW, NW etc.
-// z_rumbo is the whether the wind during the last 6 hours has changed its direction by approximately 45 degrees or more
-// z_hpa is Sea Level Adjusted (Relative) barometer in hPa or mB
-// z_trend There are five points for registering the behavior of your barometer for a period of about 6 hours prior to the forecast.
+// ============================================================================
+// OUTPUT TEXT ARRAYS (translatable — change these for other languages)
+// ============================================================================
 
+// Weather forecast descriptions (indices 0-20)
+var z_forecast = new Array("Fair. ", "Fair and warmer. ", "Fair and cooler. ", "Unsettled. ", "Unsettled and warmer. ", "Unsettled and cooler. ", "Increasing cloudiness or overcast followed by rain or showers. ", "Increasing cloudiness or overcast followed by rain or showers and warmer. ", "Showers. ", "Showers and warmer. ", "Showers and cooler. ", "Rain. ", "Rain and warmer. ", "Rain and turning cooler; then improvement likely in 24 hours. ", "Rain or showers followed by improvement (within 12 hours). ", "Rain or showers followed by improvement (within 12 hours) and becoming cooler. ", " Rain or showers followed by improvement early in period (within 6 hours). ", "Rain or showers followed by improvement early in period (within 6 hours) and becoming cooler. ", "Rain or showers followed by fair early in period (within 6 hours) and becoming cooler. ", "Unsettled followed by fair. ", "Unsettled followed by fair early in period (within 6 hours) and becoming cooler. ");
 
-// You can translate the following Arrays to get the prediction on your languaje.
-
-//Weather expected. First word of the code
-var z_forecast = new Array("Fair. ", "Fair and warmer. ", "Fair and cooler. ", "Unsettled. ", "Unsettled and warmer. ", "Unsettled and cooler. ", "Increasing cloudiness or overcast followed by rain or showers. ", "Increasing cloudiness or overcast followed by rain or showers and warmer. ", "Showers. ", "Showers and warmer. ", "Showers and cooler. ", "Rain. ", "Rain and warmer. ", "Rain and turning cooler; then improvement likely in 24 hours. ", "Rain or showers followed by improvement (within 12 hours). ", "Rain or showers followed by improvement (within 12 hours) and becoming cooler. ", " Rain or showers followed by improvement early in period (within 6 hours). ", "Rain or showers followed by improvement early in period (within 6 hours) and becoming cooler. ", "Rain or showers followed by fair early in period (within 6 hours) and becoming cooler. ", "Unsettled followed by fair. ", "Unsettled followed by fair early in period (within 6 hours) and becoming cooler. "); 
-
-//Wind Velocities. Second word of the code
+// Expected wind velocity descriptions (indices 0-7)
 var z_wind_velocities = new Array("Probably increasing.","Moderate to fresh (13-24 mph)","Strong (25-38 mph) (Strong winds may precede gales over open water)","Gale (39-54 mph)"," Dangerous gale (whole gale) (55-73 mph)","Hurricane (74 mph and above)"," Diminishing, or moderating somewhat if current winds are of fresh to strong velocity. ","No important change. Some tendency for slight increase in winds during day, diminishing in evening.");
 
-//Wind Direction. The number of the code
+// Expected wind direction descriptions (indices 0-8)
 var z_wind_direction = new Array("North or Northeast winds, ","Northeast or East winds,  ","East or Southeast winds, ","Southeast or South winds, ","South or Southwest winds, ","Southwest or West winds, ","West or Northwest winds, ","Northwest or North winds, ","Shifting (or variable) winds, ");
 
 
-// Wind direction + rumbo -> letter code lookup
+// ============================================================================
+// LOOKUP TABLES
+// ============================================================================
+
+// Maps (wind_direction, direction_change) → letter code (A-Y).
+// Calm winds bypass this table and use letter "Z" directly.
 var WIND_LETTER = {
 	"N,BACKING":"A","N,STEADY":"B","N,VEERING":"C",
 	"NE,BACKING":"D","NE,STEADY":"E","NE,VEERING":"F",
@@ -54,11 +106,11 @@ var WIND_LETTER = {
 	"NW,BACKING":"W","NW,STEADY":"X","NW,VEERING":"Y"
 };
 
-// Sager forecast lookup table
-// Key: "LETTER,hpa,trend,nubes"
-// Value: [forecastIdx, windDirIdx, velocityIdx] for simple entries
-//    or: [forecastIdx, windDirIdx1, windDirIdx2, velocityIdx] for compound entries
-//         (compound entries use "early, changing to  " between the two wind directions)
+// Sager forecast lookup table (5,000 entries).
+// Key format: "LETTER,pressure_band,trend,clouds" (e.g. "X,7,2,2")
+// Value: [forecastIdx, windDirIdx, velocityIdx]              — simple forecast
+//    or: [forecastIdx, windDirIdx1, windDirIdx2, velocityIdx] — compound forecast
+//        (compound entries output two wind directions joined by "early, changing to  ")
 var SAGER_TABLE = {
 "A,1,1,1":[2,7,7],"A,1,1,2":[2,7,7],"A,1,1,3":[2,7,7],"A,1,1,4":[2,7,7],"A,1,1,5":[18,7,7],
 "A,1,2,1":[0,7,7],"A,1,2,2":[0,7,7],"A,1,2,3":[0,7,7],"A,1,2,4":[0,7,7],"A,1,2,5":[16,7,7],
@@ -1063,20 +1115,36 @@ var SAGER_TABLE = {
 };
 
 
-// ---- MAIN FUNCTION --------------------------------------------------
+// ============================================================================
+// MAIN FUNCTION
+// ============================================================================
+//
+// Returns a 12-24 hour weather forecast string composed of three parts:
+//   1. Weather condition (from z_forecast)
+//   2. Expected wind direction (from z_wind_direction)
+//   3. Expected wind velocity (from z_wind_velocities)
+//
+// For compound forecasts (4-element table entries), the output includes two
+// wind directions joined by "early, changing to  ".
+//
+// Returns "Exceptional weather, " if the input combination is not recognized.
+//
 function sager_cast(z_wind, z_rumbo, z_hpa, z_trend, z_nubes) {
-	// Determine letter code from wind direction and rumbo
+	// Step 1: Convert wind direction + direction change into a letter code (A-Z)
+	// Calm wind always maps to "Z"; all others use the WIND_LETTER table.
 	var letter = (z_wind === "calm") ? "Z" : WIND_LETTER[z_wind + "," + z_rumbo];
-	if (!letter) return "Tiempo excepcional, ";
+	if (!letter) return "Exceptional weather, ";
 
-	// Look up forecast data
+	// Step 2: Look up the forecast tuple from the 5,000-entry Sager table
 	var entry = SAGER_TABLE[letter + "," + z_hpa + "," + z_trend + "," + z_nubes];
-	if (!entry) return "Tiempo excepcional, ";
+	if (!entry) return "Exceptional weather, ";
 
-	// Assemble output string
+	// Step 3: Assemble the human-readable forecast string
 	if (entry.length === 3) {
+		// Simple forecast: one wind direction
 		return z_forecast[entry[0]] + z_wind_direction[entry[1]] + z_wind_velocities[entry[2]];
 	}
+	// Compound forecast: wind direction changes during the forecast period
 	return z_forecast[entry[0]] + z_wind_direction[entry[1]] +
 		"early, changing to  " + z_wind_direction[entry[2]] + z_wind_velocities[entry[3]];
 }
