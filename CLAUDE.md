@@ -24,10 +24,10 @@ Some entries (1,034 of 5,000) use a compound format with two wind directions sep
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `z_wind` | string | Cardinal wind direction: `N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`, or `calm` |
-| `z_rumbo` | string | Wind direction change over last 6 hours: `BACKING`, `STEADY`, or `VEERING` |
-| `z_hpa` | number | Pressure band (1-8) |
-| `z_trend` | number | Pressure tendency over last 6 hours (1-5) |
-| `z_nubes` | number | Cloud/sky condition (1-5) |
+| `z_rumbo` | string | Wind direction change over last 6 hours (~45°+): `BACKING` (counter-clockwise), `STEADY`, or `VEERING` (clockwise) |
+| `z_hpa` | number | Pressure band: 1 = >1029.5 mb ... 8 = <975 mb (see sager_cast.js for full table) |
+| `z_trend` | number | Pressure tendency: 1 = Rising rapidly, 2 = Rising slowly, 3 = Steady, 4 = Falling slowly, 5 = Falling rapidly |
+| `z_nubes` | number | Cloud condition: 1 = Clear, 2 = Partly cloudy, 3 = Mostly overcast, 4 = Overcast, 5 = Rain |
 
 ## Translation
 
