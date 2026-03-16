@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AmigaWeather 1.0 - Sager Algorithm Forecaster</title>
+<script type="text/javascript" src="sager_cast.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+body {
+    background: linear-gradient(
+        180deg,
+        #5a6e8c 0%,
+        #7a8eac 50%,
+        #5a6e8c 100%
+    );
+    min-height: 100vh;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    padding: 20px;
+    position: relative;
+    overflow-x: auto;
+}
+
+/* Scanlines effect */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.desktop {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: bootUp 0.5s ease-out;
+}
+
+@keyframes bootUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.window {
+    background: #aaaaaa;
+    border: 2px solid #000000;
+    box-shadow: 
+        inset -2px -2px 0 #666666,
+        inset 2px 2px 0 #ffffff,
+        4px 4px 8px rgba(0, 0, 0, 0.5);
+    margin-bottom: 20px;
+}
+
+.title-bar {
+    background: linear-gradient(90deg, #0055aa 0%, #0088ff 100%);
+    border-bottom: 2px solid #000000;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+}
+
+.title-bar-text {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000000;
+    padding-left: 8px;
+    letter-spacing: 1px;
+}
+
+.title-bar-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.title-bar-button {
+    width: 20px;
+    height: 20px;
+    background: #bbbbbb;
+    border: 2px solid #000000;
+    box-shadow: 
+        inset -1px -1px 0 #666666,
+        inset 1px 1px 0 #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.title-bar-button:active {
+    box-shadow: 
+        inset 1px 1px 0 #666666,
+        inset -1px -1px 0 #ffffff;
+}
+
+.title-bar-button.close {
+    background: #ff8888;
+}
+
+.title-bar-button.depth {
+    background: #88ff88;
+}
+
+.window-content {
+    padding: 16px;
+}
+
+.panel {
+    background: #bbbbbb;
+    border: 2px solid #000000;
+    box-shadow: 
+        inset -2px -2px 0 #ffffff,
+        inset 2px 2px 0 #666666;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.panel-title {
+    background: #999999;
+    border: 1px solid #000000;
+    padding: 4px 8px;
+    margin: -12px -12px 12px -12px;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 
+        inset -1px -1px 0 #666666,
+        inset 1px 1px 0 #cccccc;
+}
+
+.form-group {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.form-group label {
+    flex: 0 0 180px;
+    font-size: 16px;
+    color: #000000;
+    text-shadow: 1px 1px 0 #ffffff;
+}
+
+/* Mobile responsive design */
+@media (max-width: 640px) {
+    body {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .desktop {
+        max-width: 100%;
+    }
+    
+    .ascii-logo {
+        font-size: 8px;
+        overflow-x: auto;
+    }
+    
+    .window-content {
+        padding: 12px;
+    }
+    
+    .panel {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .panel-title {
+        margin: -8px -8px 8px -8px;
+        font-size: 14px;
+    }
+    
+    .form-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    
+    .form-group label {
+        flex: none;
+        width: 100%;
+        font-size: 14px;
+    }
+    
+    .amiga-select {
+        width: 100%;
+        font-size: 14px;
+        padding: 6px 30px 6px 8px;
+    }
+    
+    .amiga-button {
+        font-size: 16px;
+        padding: 8px 16px;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .info-text {
+        font-size: 12px;
+        padding: 6px;
+    }
+    
+    .forecast-display {
+        padding: 12px;
+    }
+    
+    .forecast-label {
+        font-size: 12px;
+    }
+    
+    #forecast {
+        font-size: 16px;
+    }
+    
+    .title-bar-text {
+        font-size: 14px;
+    }
+    
+    .copyright {
+        font-size: 12px;
+    }
+}
+
+.amiga-select {
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 
+        inset 2px 2px 0 #666666,
+        inset -2px -2px 0 #dddddd;
+    padding: 4px 8px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg width='12' height='12' xmlns='http://www.w3.org/2000/svg'%3e%3cpolygon points='6,9 3,3 9,3' fill='black'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 30px;
+}
+
+.amiga-select:focus {
+    outline: 2px dotted #0055aa;
+    outline-offset: 2px;
+}
+
+.amiga-button {
+    background: linear-gradient(180deg, #dddddd 0%, #aaaaaa 100%);
+    border: 2px solid #000000;
+    box-shadow: 
+        inset -2px -2px 0 #666666,
+        inset 2px 2px 0 #ffffff,
+        2px 2px 4px rgba(0, 0, 0, 0.3);
+    padding: 8px 24px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.1s;
+}
+
+.amiga-button:hover {
+    background: linear-gradient(180deg, #eeeeee 0%, #bbbbbb 100%);
+}
+
+.amiga-button:active {
+    box-shadow: 
+        inset 2px 2px 0 #666666,
+        inset -2px -2px 0 #ffffff;
+    transform: translate(1px, 1px);
+}
+
+.amiga-button.primary {
+    background: linear-gradient(180deg, #ffdd88 0%, #ff9900 100%);
+    color: #000000;
+    text-shadow: 1px 1px 0 #ffff99;
+}
+
+.amiga-button.primary:hover {
+    background: linear-gradient(180deg, #ffee99 0%, #ffaa11 100%);
+}
+
+.button-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.forecast-display {
+    background: #000000;
+    border: 2px solid #000000;
+    box-shadow: 
+        inset 2px 2px 0 #333333,
+        inset -2px -2px 0 #111111;
+    padding: 16px;
+    margin-top: 16px;
+    min-height: 80px;
+}
+
+.forecast-label {
+    color: #00ff00;
+    font-size: 14px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+#forecast {
+    color: #00ff00;
+    font-size: 20px;
+    line-height: 1.4;
+    text-shadow: 0 0 5px #00ff00;
+    word-wrap: break-word;
+    animation: textGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes textGlow {
+    from { text-shadow: 0 0 5px #00ff00; }
+    to { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff0066; }
+}
+
+.info-text {
+    font-size: 14px;
+    color: #333333;
+    margin-top: 8px;
+    padding: 8px;
+    background: #cccccc;
+    border: 1px solid #999999;
+    box-shadow: 
+        inset 1px 1px 0 #eeeeee,
+        inset -1px -1px 0 #999999;
+}
+
+.copyright {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000000;
+}
+
+.copyright a {
+    color: #ffdd88;
+    text-decoration: none;
+}
+
+.copyright a:hover {
+    text-decoration: underline;
+}
+
+/* Amiga-style radio buttons for future use */
+.amiga-radio {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #000000;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 
+        inset 1px 1px 0 #666666,
+        inset -1px -1px 0 #dddddd;
+    cursor: pointer;
+}
+
+.amiga-radio:checked {
+    background: radial-gradient(circle, #0055aa 40%, #ffffff 45%);
+}
+
+/* Loading cursor */
+.loading {
+    cursor: wait;
+}
+
+/* ASCII art logo */
+.ascii-logo {
+    font-size: 12px;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 0 #000000;
+    white-space: pre;
+    line-height: 1;
+}
+</style>
+</head>
+<body>
+<div class="desktop">
+    <div class="ascii-logo">
+╔═══════════════════════════════════════╗
+║  AMIGA WEATHER SYSTEM v1.0 ©1985-2024 ║
+╚═══════════════════════════════════════╝
+    </div>
+
+    <div class="window">
+        <div class="title-bar">
+            <span class="title-bar-text">⛅ AmigaWeather - Sager Algorithm</span>
+            <div class="title-bar-controls">
+                <div class="title-bar-button depth">▼</div>
+                <div class="title-bar-button close">✕</div>
+            </div>
+        </div>
+        
+        <div class="window-content">
+            <form name="bert" onsubmit="sagercrap(); return false">
+                <div class="panel">
+                    <div class="panel-title">Wind Parameters</div>
+                    
+                    <div class="form-group">
+                        <label>Surface Direction:</label>
+                        <select name="wind" class="amiga-select">
+                            <option value="calm">Calm</option>
+                            <option value="N">North</option>
+                            <option value="NE">NorthEast</option>
+                            <option value="E">East</option>
+                            <option value="SE">SouthEast</option>
+                            <option value="S">South</option>
+                            <option value="SW">SouthWest</option>
+                            <option value="W">West</option>
+                            <option value="NW" selected>NorthWest</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Direction Change:</label>
+                        <select name="rumbo" class="amiga-select">
+                            <option value="BACKING">Backing</option>
+                            <option value="STEADY" selected>Steady</option>
+                            <option value="VEERING">Veering</option>
+                        </select>
+                    </div>
+                    
+                    <div class="info-text">
+                        💡 If wind shifted 45°+ clockwise in 6hrs: VEERING | Counter-clockwise: BACKING
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Atmospheric Pressure</div>
+                    
+                    <div class="form-group">
+                        <label>Pressure (MSL):</label>
+                        <select name="baro" class="amiga-select">
+                            <option value="1">30.4-31.0 inHg (>1029.5 mb)</option>
+                            <option value="2">30.1-30.4 inHg (1019-1029 mb)</option>
+                            <option value="3">29.9-30.1 inHg (1012-1019 mb)</option>
+                            <option value="4">29.7-29.9 inHg (1005-1012 mb)</option>
+                            <option value="5" selected>29.5-29.7 inHg (999-1005 mb)</option>
+                            <option value="6">29.2-29.5 inHg (988-999 mb)</option>
+                            <option value="7">28.8-29.2 inHg (975-988 mb)</option>
+                            <option value="8">28.0-28.8 inHg (<975 mb)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pressure Trend:</label>
+                        <select name="tendencia" class="amiga-select">
+                            <option value="1">Rising Rapidly</option>
+                            <option value="2">Rising Slowly</option>
+                            <option value="3">Steady</option>
+                            <option value="4">Falling Slowly</option>
+                            <option value="5" selected>Falling Rapidly</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Cloud Coverage</div>
+                    
+                    <div class="form-group">
+                        <label>Current Conditions:</label>
+                        <select name="nubes" class="amiga-select">
+                            <option value="1" selected>Clear</option>
+                            <option value="2">Partly Cloudy</option>
+                            <option value="3">Mostly Overcast</option>
+                            <option value="4">Overcast</option>
+                            <option value="5">Rain</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-container">
+                    <button type="submit" class="amiga-button primary">
+                        ▶ CALCULATE FORECAST
+                    </button>
+                </div>
+            </form>
+
+            <div class="forecast-display">
+                <div class="forecast-label">▸ 12-24 Hour Forecast:</div>
+                <div id="forecast">Unsettled and cooler. Southwest or West winds, Strong (25-38 mph) (Strong winds may precede gales over open water)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="window">
+        <div class="title-bar">
+            <span class="title-bar-text">📖 System Information</span>
+            <div class="title-bar-controls">
+                <div class="title-bar-button depth">▼</div>
+            </div>
+        </div>
+        
+        <div class="window-content">
+            <div class="panel">
+                <p style="line-height: 1.6;">
+                    The SAGER WEATHERCASTER is a precision meteorological instrument that has been in continuous use since 1942. This scientific tool provides accurate weather forecasts for a 30-mile (50km) radius based on five thousand variations of input data.
+                </p>
+                <br>
+                <p style="line-height: 1.6;">
+                    Originally developed for the United States Air Force, this algorithm embodies over 35 years of forecasting experience. The system generates 12-24 hour forecasts for any location north of 25° latitude.
+                </p>
+                <br>
+                <p style="line-height: 1.6;">
+                    For maximum accuracy, observations should be made at frequent intervals during rapidly changing conditions.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="copyright">
+        Original Algorithm © 2008 Naish666 | Amiga Interface © 2024<br>
+        <a href="https://www.gnu.org/licenses/gpl.html">GNU GPL v3.0</a>
+    </div>
+</div>
+
+<script>
+function sagercrap() {
+    // Add loading state
+    document.body.classList.add('loading');
+    
+    baro = document.bert.baro.value * 1;
+    nubes = document.bert.nubes.value;
+    wind = document.bert.wind.value;
+    trend = document.bert.tendencia.value;
+    rumbo = document.bert.rumbo.value;
+    johnny = document.getElementById('forecast');
+    
+    // Simulate vintage computer processing delay
+    setTimeout(function() {
+        johnny.innerHTML = sager_cast(wind, rumbo, baro, trend, nubes);
+        document.body.classList.remove('loading');
+        
+        // Flash effect on update
+        johnny.style.animation = 'none';
+        setTimeout(function() {
+            johnny.style.animation = 'textGlow 2s ease-in-out infinite alternate';
+        }, 10);
+    }, 300);
+}
+
+// Add some Amiga-style interactivity
+document.querySelectorAll('.title-bar-button.close').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.closest('.window').style.display = 'none';
+    });
+});
+
+document.querySelectorAll('.title-bar-button.depth').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const content = this.closest('.window').querySelector('.window-content');
+        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+    });
+});
+</script>
+</body>
+</html>
