@@ -9,23 +9,10 @@
 *  This implementation encodes all 5,000 forecast combinations as a data-driven    *
 *  lookup table, mapping wind, pressure, and cloud conditions to forecast text.    *
 *                                                                                  *
-*                Copyright © 2008 Naish666 (eltiempo.selfip.com)                   *
-*                            October 2008 - v1.0                                   *
+*                Copyright © 2026 Joseph Sherman (Aurnix)                          *
+*                                                                                  *
 *************************************************************************************
-*  This program is free software: you can redistribute it and/or modify            *
-*  it under the terms of the GNU General Public License as published by            *
-*  the Free Software Foundation, either version 3 of the License, or              *
-*  (at your option) any later version.                                             *
-*                                                                                  *
-*  This program is distributed in the hope that it will be useful,                 *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of                  *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                   *
-*  GNU General Public License for more details.                                    *
-*                                                                                  *
-*  You should have received a copy of the GNU General Public License               *
-*  along with this program.  If not, see <http://www.gnu.org/licenses/>.           *
-*                                                                                  *
-*************************************************************************************/
+
 
 
 // ============================================================================
