@@ -63,7 +63,7 @@ The algorithm encodes the original Sager Weathercaster paper lookup table as a d
 
 ## License
 
-GNU General Public License v3.0 -- see [LICENSE](LICENSE) for details.
+MIT
 
-Original algorithm source: Copyright 2008 Naish666 (eltiempo.selfip.com)
-Modifications, English Translation, Cleanup, etc: J. Sherman 2026 (github.com/aurnix)
+Inspired by the work of Naish666 (eltiempo.selfip.com) in 2008
+J. Sherman 2026 (github.com/aurnix)
